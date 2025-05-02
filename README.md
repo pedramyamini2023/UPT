@@ -12,3 +12,11 @@
 <p align="center">
   <img width=95% src="./assets/motivation.png">
 </p>
+
+## How to run
+
+This code is based on [CoOp](https://github.com/KaiyangZhou/CoOp), you may refer to the [install instruction](https://github.com/KaiyangZhou/CoOp?tab=readme-ov-file#how-to-install) 
+
+The training scripts to re-produce the results are provided [here](scripts/unified).
+
+The model structure is defined [here](trainers/unified.py).
