@@ -6,22 +6,66 @@ from dassl.config import get_cfg_default
 from dassl.engine import build_trainer
 
 # custom
-import datasets.oxford_pets
-import datasets.oxford_flowers
-import datasets.fgvc_aircraft
-import datasets.dtd
-import datasets.eurosat
-import datasets.stanford_cars
-import datasets.food101
-import datasets.sun397
-import datasets.caltech101
-import datasets.ucf101
-import datasets.imagenet
+try:
+    import datasets.oxford_pets
+except ImportError as e:
+    print(e)
+    
+try:
+    import datasets.oxford_flowers
+except ImportError as e:
+    print(e)
 
-import datasets.imagenet_sketch
-import datasets.imagenetv2
-import datasets.imagenet_a
-import datasets.imagenet_r
+try:
+    import datasets.fgvc_aircraft
+except ImportError as e:
+    print(e)
+
+try:
+    import datasets.dtd 
+except ImportError as e:
+    print(e)
+    
+try:
+    import datasets.eurosat 
+except ImportError as e:
+    print(e)
+
+try:
+    import datasets.stanford_cars
+except ImportError as e:
+    print(e)
+
+try:
+    import datasets.food101 
+except ImportError as e:
+    print(e)
+
+try:
+    import datasets.sun397
+except ImportError as e:
+    print(e)
+    
+try:
+    import datasets.caltech101
+except ImportError as e:
+    print(e)
+    
+try:
+    import datasets.ucf101
+except ImportError as e:
+    print(e)
+
+try:
+    import datasets.imagenet
+
+    import datasets.imagenet_sketch
+    import datasets.imagenetv2
+    import datasets.imagenet_a
+    import datasets.imagenet_r
+except ImportError as e:
+    print(e)
+    
 
 import trainers.coop
 import trainers.cocoop
