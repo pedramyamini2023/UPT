@@ -28,15 +28,15 @@ import trainers.cocoop
 import trainers.zsclip
 import trainers.coop_testtime
 import trainers.vpt
-import trainers.vpt_testtime
+#import trainers.vpt_testtime
 import trainers.vpt_deep
 import trainers.vpt_shallow
 import trainers.unified
-import trainers.unified_v2
-import trainers.unified_v3
-import trainers.unified_v4
-import trainers.unified_v5
-import trainers.unified_v6
+#import trainers.unified_v2
+#import trainers.unified_v3
+#import trainers.unified_v4
+#import trainers.unified_v5
+#import trainers.unified_v6
 
 
 def print_args(args, cfg):
