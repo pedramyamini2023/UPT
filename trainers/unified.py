@@ -39,6 +39,9 @@ class PromptLearner(nn.Module):
                 embedding = clip_model.token_embedding(prompt).type(dtype)
             ctx_vectors = embedding[0, 1:1 + n_ctx, :]
             prompt_prefix = ctx_init
+            
+            if cfg.TRAINER.COOP.CSC:
+                ctx_vectors = ctx_vectors.expand(n_cls,-1,-1)
 
         else:
             # random initialization
@@ -80,6 +83,8 @@ class PromptLearner(nn.Module):
         self.class_token_position = cfg.TRAINER.COOP.CLASS_TOKEN_POSITION
 
         vis_dim = clip_model.visual.positional_embedding.shape[-1]
+        print(f"vis_dim: {vis_dim}")
+        
         visual_vectors = torch.empty(1, n_ctx * 2, ctx_dim, dtype=dtype)
         nn.init.normal_(visual_vectors, std=0.02)
         # self.visual_ctx = nn.Parameter(visual_vectors)
