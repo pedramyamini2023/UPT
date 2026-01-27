@@ -265,8 +265,13 @@ class VisionTransformer(nn.Module):
         #
         cls = x[:, 0:1, :]
         spatial = x[:, 1:, :]
-        prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
+        prompt = prompt.unsqueeze(0).repeat(len(x),1 , 1, 1)
+        print(f"x.shape (image in model.py/forward_prompt): {x.shape}")
+        print(f"prompt.shape (prompt in model.py/forward_prompt): {prompt.shape}")
+        print(f"cls.shape (cls in model.py/forward_prompt): {cls.shape}")
+        print(f"spatial.shape (spatial in model.py/forward_prompt): {spatial.shape}")
         x = torch.cat([cls, prompt, spatial], 1)
+        print(f"x.shape (x in model.py/forward_prompt): {x.shape}")
         #
         
         x = self.ln_pre(x)

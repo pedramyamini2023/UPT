@@ -224,8 +224,8 @@ class CustomCLIP(nn.Module):
         
         # image_features = self.image_encoder(image.type(self.dtype))
         visual_ctx = self.prompt_learner.get_visual_prompt()
-        print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
-        print(f"image.shape: {image.shape}")
+        print(f"visual prompts (visual_ctx.shape in trainers/unified.py/CustomCLIP/forward): {visual_ctx.shape}")
+        print(f"image.shape (image in trainers/unified.py/CustomCLIP/forward): {image.shape}")
         image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
 
