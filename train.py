@@ -144,7 +144,12 @@ def extend_cfg(cfg):
 
     cfg.TRAINER.COOP = CN()
     cfg.TRAINER.COOP.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.COOP.CSC = False  # class-specific context
+    #cfg.TRAINER.COOP.CSC = False  # class-specific context
+    
+    cfg.TRAINER.CSC = False
+    cfg.TRAINER.UNI = False
+    cfg.TRAINER.UNI_CSC = False
+    
     cfg.TRAINER.COOP.CTX_INIT = ""  # initialization words
     cfg.TRAINER.COOP.PREC = "fp16"  # fp16, fp32, amp
     cfg.TRAINER.COOP.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
@@ -153,6 +158,13 @@ def extend_cfg(cfg):
     cfg.TRAINER.COCOOP.N_CTX = 16  # number of context vectors
     cfg.TRAINER.COCOOP.CTX_INIT = ""  # initialization words
     cfg.TRAINER.COCOOP.PREC = "fp16"  # fp16, fp32, amp
+    
+    cfg.TRAINER.UNI_CSC = True
+    cfg.TRAINER.UNI = False
+    cfg.TRAINER.CSC = False
+    
+    cfg.TRAINER.N_GLOB = 1
+    cfg.TRAINER.N_LOC = 3
 
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
 

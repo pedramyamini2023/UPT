@@ -21,7 +21,7 @@ class PromptLearner(nn.Module):
     def __init__(self, cfg, classnames, clip_model):
         super().__init__()
         n_cls = len(classnames)
-        n_ctx = cfg.TRAINER.COOP.N_CTX
+        #n_ctx = cfg.TRAINER.COOP.N_CTX
         ctx_init = cfg.TRAINER.COOP.CTX_INIT
         dtype = clip_model.dtype
         ctx_dim = clip_model.ln_final.weight.shape[0]
@@ -29,36 +29,35 @@ class PromptLearner(nn.Module):
         cfg_imsize = cfg.INPUT.SIZE[0]
         assert cfg_imsize == clip_imsize
         # f"cfg_imsize ({cfg_imsize}) must equal to clip_imsize ({clip_imsize})"
-
+        
+        if cfg.TRAINER.UNI_CSC:
+            n_glob = cfg.TRAINER.N_GLOB
+            n_loc = cfg.TRAINER.N_LOC
+            unified_vectors = torch.empty(n_cls, (n_glob + n_loc) * 2, ctx_dim, dtype=dtype)
+            self.n_ctx = n_glob + n_loc
+            pass
+        elif cfg.TRAINER.UNI:
+            n_glob = cfg.TRAINER.N_GLOB
+            unified_vectors = torch.empty(1, (n_glob) * 2, ctx_dim, dtype=dtype)
+            self.n_ctx = n_glob
+            pass
+        elif cfg.TRAINER.CSC:
+            n_loc = cfg.TRAINER.N_LOC
+            unified_vectors = torch.empty(n_cls, (n_loc) * 2, ctx_dim, dtype=dtype)
+            self.n_ctx = n_loc
+            pass
+        
         if ctx_init:
             # use given words to initialize context vectors
             ctx_init = ctx_init.replace("_", " ")
-            n_ctx = len(ctx_init.split(" "))
-            prompt = clip.tokenize(ctx_init)
-            with torch.no_grad():
-                embedding = clip_model.token_embedding(prompt).type(dtype)
-            ctx_vectors = embedding[0, 1:1 + n_ctx, :]
             prompt_prefix = ctx_init
-            
-            if cfg.TRAINER.COOP.CSC:
-                ctx_vectors = ctx_vectors.expand(n_cls,-1,-1)
-
         else:
             # random initialization
-            if cfg.TRAINER.COOP.CSC:
-                print("Initializing class-specific contexts")
-                ctx_vectors = torch.empty(n_cls, n_ctx, ctx_dim, dtype=dtype)
-            else:
-                print("Initializing a generic context")
-                ctx_vectors = torch.empty(n_ctx, ctx_dim, dtype=dtype)
-            nn.init.normal_(ctx_vectors, std=0.02)
-            prompt_prefix = " ".join(["X"] * n_ctx)
+            prompt_prefix = " ".join(["X"] * self.n_ctx)
+        
 
         print(f'Initial context: "{prompt_prefix}"')
-        print(f"Number of context words (tokens): {n_ctx}")
-
-        # self.ctx = nn.Parameter(ctx_vectors)  # to be optimized
-        ctx = ctx_vectors.unsqueeze(0)
+        print(f"Number of context words (tokens): {self.n_ctx}")
 
         classnames = [name.replace("_", " ") for name in classnames]
         name_lens = [len(_tokenizer.encode(name)) for name in classnames]
@@ -74,22 +73,20 @@ class PromptLearner(nn.Module):
         # those computed using the current class names
         self.register_buffer("token_prefix", embedding[:, :1, :])  # SOS
         self.register_buffer("token_suffix",
-                             embedding[:, 1 + n_ctx:, :])  # CLS, EOS
+                             embedding[:, 1 + self.n_ctx:, :])  # CLS, EOS
 
         self.n_cls = n_cls
-        self.n_ctx = n_ctx
         self.tokenized_prompts = tokenized_prompts  # torch.Tensor
         self.name_lens = name_lens
         self.class_token_position = cfg.TRAINER.COOP.CLASS_TOKEN_POSITION
 
         vis_dim = clip_model.visual.positional_embedding.shape[-1]
-        print(f"vis_dim: {vis_dim}")
+        #print(f"vis_dim: {vis_dim}")
         
-        visual_vectors = torch.empty(1, n_ctx * 2, ctx_dim, dtype=dtype)
-        nn.init.normal_(visual_vectors, std=0.02)
-        # self.visual_ctx = nn.Parameter(visual_vectors)
-        self.uni_ctx = nn.Parameter(visual_vectors)
-        # uni_ctx = torch.cat([ctx, visual_vectors], 1)
+        nn.init.normal_(unified_vectors, std=0.02)
+        # self.visual_ctx = nn.Parameter(unified_vectors)
+        self.uni_ctx = nn.Parameter(unified_vectors)
+        # uni_ctx = torch.cat([ctx, unified_vectors], 1)
         # self.uni_ctx = nn.Parameter(uni_ctx)
 
         num_heads = 1
@@ -129,7 +126,7 @@ class PromptLearner(nn.Module):
         src2 = self.norm2(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src2))))
         src = src + self.dropout2(src2)
-        return src[0, :4, :]
+        return src[:, :self.n_ctx, :]
 
     def get_visual_prompt(self):
         src = self.uni_ctx
@@ -139,10 +136,13 @@ class PromptLearner(nn.Module):
         src2 = self.norm2(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src2))))
         src = src + self.dropout2(src2)
-        return self.mlp(src[0, 4:, :])
+        return self.mlp(src[:, self.n_ctx:, :])
 
     def forward(self):
         ctx = self.get_text_prompt()
+        
+        # if the text prompt ctx is unified, then expand(copy) it to have n_cls dim
+        # if it's csc already, continue without any changes
         if ctx.dim() == 2:
             ctx = ctx.unsqueeze(0).expand(self.n_cls, -1, -1)
 
@@ -224,10 +224,13 @@ class CustomCLIP(nn.Module):
         
         # image_features = self.image_encoder(image.type(self.dtype))
         visual_ctx = self.prompt_learner.get_visual_prompt()
+        print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
+        print(f"image.shape: {image.shape}")
         image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
 
         prompts = self.prompt_learner()
+        print(f"textual_prompts (prompts.shape): {prompts.shape}")
         tokenized_prompts = self.tokenized_prompts
         text_features = self.text_encoder(prompts, tokenized_prompts)
 
