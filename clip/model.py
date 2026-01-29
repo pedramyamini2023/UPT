@@ -294,14 +294,15 @@ class VisionTransformer(nn.Module):
         if flattening_batch_ncls_dim:
             batch_dim = x.shape[0]
             ncls_dim = x.shape[1]
-            x = x.view(batch_dim*ncls_dim, -1, -1)
+            embedding_dim = x.shape[-1]
+            x = x.view(batch_dim * ncls_dim, -1, embedding_dim)
 
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
         
         if flattening_batch_ncls_dim:
-            x = x.view(batch_dim, ncls_dim, -1, -1)
+            x = x.view(batch_dim, ncls_dim, -1, embedding_dim)
 
         x = self.ln_post(x[:, 0, :])
 
