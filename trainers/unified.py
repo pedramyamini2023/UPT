@@ -238,9 +238,13 @@ class CustomCLIP(nn.Module):
                                                               keepdim=True)
         text_features = text_features / text_features.norm(dim=-1,
                                                            keepdim=True)
+        
+        print(f"image_features.shape: {image_features.shape}, text_features.shape: {text_features.shape}")
 
         logit_scale = self.logit_scale.exp()
         logits = logit_scale * image_features @ text_features.t()
+        
+        print(f"logits.shape: {logits.shape}")
 
         return logits
 
