@@ -305,7 +305,10 @@ class VisionTransformer(nn.Module):
 
         print(f"x.shape: {x.shape} before ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
 
-        x = self.ln_post(x[:, 0, :])
+        if flattening_batch_ncls_dim:
+            x = self.ln_post(x[:, :, 0, :])
+        else:    
+            x = self.ln_post(x[:, 0, :])
         
         print(f"x.shape: {x.shape} after ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
 
