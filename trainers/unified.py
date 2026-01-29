@@ -305,6 +305,7 @@ class Unified_v6(TrainerX):
             self.scaler.update()
         else:
             output = self.model(image)
+            print(f"output.shape: {output.shape}, label.shape: {label.shape}")
             loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
