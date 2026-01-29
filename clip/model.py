@@ -273,6 +273,7 @@ class VisionTransformer(nn.Module):
             cls = cls.unsqueeze(1).expand(-1, n_cls, -1, -1)
             spatial = spatial.unsqueeze(1).expand(-1, n_cls, -1, -1)
             concatenation_dim = 2
+            flattening_batch_ncls_dim = True
         elif prompt.ndim == 2:
             prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
             concatenation_dim = 1
@@ -290,9 +291,17 @@ class VisionTransformer(nn.Module):
         
         x = self.ln_pre(x)
 
+        if flattening_batch_ncls_dim:
+            batch_dim = x.shape[0]
+            ncls_dim = x.shape[1]
+            x = x.view(batch_dim*ncls_dim, -1, -1)
+
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
+        
+        if flattening_batch_ncls_dim:
+            x = x.view(batch_dim, ncls_dim, -1, -1)
 
         x = self.ln_post(x[:, 0, :])
 
