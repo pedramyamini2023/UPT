@@ -285,7 +285,6 @@ class VisionTransformer(nn.Module):
         
         x = torch.cat([cls, prompt, spatial], concatenation_dim)
         
-        
         print(f"x.shape (x in model.py/forward_prompt): {x.shape}")
         #
         
@@ -304,10 +303,16 @@ class VisionTransformer(nn.Module):
         if flattening_batch_ncls_dim:
             x = x.view(batch_dim, ncls_dim, -1, embedding_dim)
 
+        print(f"x.shape: {x.shape} before ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
+
         x = self.ln_post(x[:, 0, :])
+        
+        print(f"x.shape: {x.shape} after ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
 
         if self.proj is not None:
             out = x @ self.proj
+            
+        print(f"out.shape: {out.shape} in clip/model.py/VisionTransformer/forward_prompt")
 
         return out, x
     
