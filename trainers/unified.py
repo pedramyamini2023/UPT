@@ -293,6 +293,8 @@ class Unified_v6(TrainerX):
 
     def forward_backward(self, batch):
         image, label = self.parse_batch_train(batch)
+        
+        print(f"image.shape: {image.shape} and label:{label.shape}")
 
         prec = self.cfg.TRAINER.COOP.PREC
         if prec == "amp":
