@@ -265,57 +265,20 @@ class VisionTransformer(nn.Module):
         #
         cls = x[:, 0:1, :]
         spatial = x[:, 1:, :]
-        
-        
-        if prompt.ndim == 3:
-            prompt = prompt.unsqueeze(0).repeat(len(x),1 , 1, 1)
-            n_cls = prompt.shape[1]
-            cls = cls.unsqueeze(1).expand(-1, n_cls, -1, -1)
-            spatial = spatial.unsqueeze(1).expand(-1, n_cls, -1, -1)
-            concatenation_dim = 2
-            flattening_batch_ncls_dim = True
-        elif prompt.ndim == 2:
-            prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
-            concatenation_dim = 1
-        
-        print(f"x.shape (image in model.py/forward_prompt): {x.shape}")
-        print(f"prompt.shape (prompt in model.py/forward_prompt): {prompt.shape}")
-        print(f"cls.shape (cls in model.py/forward_prompt): {cls.shape}")
-        print(f"spatial.shape (spatial in model.py/forward_prompt): {spatial.shape}")
-        
-        x = torch.cat([cls, prompt, spatial], concatenation_dim)
-        
-        print(f"x.shape (x in model.py/forward_prompt): {x.shape}")
+        prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
+        x = torch.cat([cls, prompt, spatial], 1)
         #
         
         x = self.ln_pre(x)
 
-        if flattening_batch_ncls_dim:
-            batch_dim = x.shape[0]
-            ncls_dim = x.shape[1]
-            embedding_dim = x.shape[-1]
-            x = x.view(batch_dim * ncls_dim, -1, embedding_dim)
-
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
-        
-        if flattening_batch_ncls_dim:
-            x = x.view(batch_dim, ncls_dim, -1, embedding_dim)
 
-        print(f"x.shape: {x.shape} before ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
-
-        if flattening_batch_ncls_dim:
-            x = self.ln_post(x[:, :, 0, :])
-        else:    
-            x = self.ln_post(x[:, 0, :])
-        
-        print(f"x.shape: {x.shape} after ln_post(x[:,0,:]) in clip/model.py/VisionTransformer/forward_prompt")
+        x = self.ln_post(x[:, 0, :])
 
         if self.proj is not None:
             out = x @ self.proj
-            
-        print(f"out.shape: {out.shape} in clip/model.py/VisionTransformer/forward_prompt")
 
         return out, x
     

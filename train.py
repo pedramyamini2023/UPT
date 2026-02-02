@@ -146,6 +146,9 @@ def extend_cfg(cfg):
     cfg.TRAINER.COOP.N_CTX = 16  # number of context vectors
     #cfg.TRAINER.COOP.CSC = False  # class-specific context
     
+    cfg.TRAINER.CSC = False
+    cfg.TRAINER.UNI = False
+    cfg.TRAINER.UNI_CSC = False
     
     cfg.TRAINER.COOP.CTX_INIT = ""  # initialization words
     cfg.TRAINER.COOP.PREC = "fp16"  # fp16, fp32, amp

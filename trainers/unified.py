@@ -224,8 +224,8 @@ class CustomCLIP(nn.Module):
         
         # image_features = self.image_encoder(image.type(self.dtype))
         visual_ctx = self.prompt_learner.get_visual_prompt()
-        print(f"visual prompts (visual_ctx.shape in trainers/unified.py/CustomCLIP/forward): {visual_ctx.shape}")
-        print(f"image.shape (image in trainers/unified.py/CustomCLIP/forward): {image.shape}")
+        print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
+        print(f"image.shape: {image.shape}")
         image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
 
@@ -238,13 +238,9 @@ class CustomCLIP(nn.Module):
                                                               keepdim=True)
         text_features = text_features / text_features.norm(dim=-1,
                                                            keepdim=True)
-        
-        print(f"image_features.shape: {image_features.shape}, text_features.shape: {text_features.shape}")
 
         logit_scale = self.logit_scale.exp()
         logits = logit_scale * image_features @ text_features.t()
-        
-        print(f"logits.shape: {logits.shape}")
 
         return logits
 
@@ -309,7 +305,6 @@ class Unified_v6(TrainerX):
             self.scaler.update()
         else:
             output = self.model(image)
-            print(f"output.shape: {output.shape}, label.shape: {label.shape}")
             loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
