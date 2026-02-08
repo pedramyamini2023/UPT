@@ -228,7 +228,7 @@ class CustomCLIP(nn.Module):
         print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
         print(f"image.shape: {image.shape}")
         
-        image_features, _ = self.image_encoder.forward(
+        image_features = self.image_encoder.forward(
             image.type(self.dtype))
 
         prompts = self.prompt_learner()
