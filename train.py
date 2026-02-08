@@ -165,6 +165,8 @@ def extend_cfg(cfg):
     
     cfg.TRAINER.N_GLOB = 1
     cfg.TRAINER.N_LOC = 3
+    
+    cfg.TRAINER.TOPK = 5
 
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
 

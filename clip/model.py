@@ -265,7 +265,8 @@ class VisionTransformer(nn.Module):
         #
         cls = x[:, 0:1, :]
         spatial = x[:, 1:, :]
-        prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
+        # prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
+        # prompt is (batch_dim, v, d), no need to unsqueeze then repeat to add batch_dim
         x = torch.cat([cls, prompt, spatial], 1)
         #
         

@@ -217,8 +217,9 @@ class CustomCLIP(nn.Module):
         self.text_encoder = TextEncoder(clip_model)
         self.logit_scale = clip_model.logit_scale
         self.dtype = clip_model.dtype
+        self.cfg = cfg
 
-    def forward(self, image):
+    def forward(self, image, label):
         # import time
         # torch.save(image.data.cpu(), f'img_{int(time.time())}.pt')
         
@@ -226,8 +227,9 @@ class CustomCLIP(nn.Module):
         visual_ctx = self.prompt_learner.get_visual_prompt()
         print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
         print(f"image.shape: {image.shape}")
-        image_features, _ = self.image_encoder.forward_prompt(
-            image.type(self.dtype), visual_ctx)
+        
+        image_features, _ = self.image_encoder.forward(
+            image.type(self.dtype))
 
         prompts = self.prompt_learner()
         print(f"textual_prompts (prompts.shape): {prompts.shape}")
@@ -240,9 +242,20 @@ class CustomCLIP(nn.Module):
                                                            keepdim=True)
 
         logit_scale = self.logit_scale.exp()
-        logits = logit_scale * image_features @ text_features.t()
+        
+        coarse_logits = logit_scale * image_features @ text_features.t()
+        
+        print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
+        
+        # find top-k classes visual_prompts
+        top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1)
+        
+        image_features, _ = self.image_encoder.forward_prompt(
+            image.type(self.dtype), visual_ctx)
+        
+        final_logits = coarse_logits # + refined_logits
 
-        return logits
+        return final_logits
 
 
 @TRAINER_REGISTRY.register()
@@ -299,14 +312,14 @@ class Unified_v6(TrainerX):
         prec = self.cfg.TRAINER.COOP.PREC
         if prec == "amp":
             with autocast():
-                output = self.model(image)
+                output = self.model(image, label)
                 loss = F.cross_entropy(output, label)
             self.optim.zero_grad()
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optim)
             self.scaler.update()
         else:
-            output = self.model(image)
+            output = self.model(image, label)
             loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
