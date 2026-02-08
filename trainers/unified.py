@@ -250,6 +250,8 @@ class CustomCLIP(nn.Module):
         # find top-k classes visual_prompts
         top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1)
         
+        print(f"top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.shape}")
+        
         image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
         
