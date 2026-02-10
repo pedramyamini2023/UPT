@@ -228,34 +228,73 @@ class CustomCLIP(nn.Module):
         print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
         print(f"image.shape: {image.shape}")
         
-        image_features = self.image_encoder.forward(
-            image.type(self.dtype))
+        if self.cfg.TRAINER.UNI_CSC or self.cfg.TRAINER.CSC:
+            image_features = self.image_encoder.forward(
+                image.type(self.dtype))
 
-        prompts = self.prompt_learner()
-        print(f"textual_prompts (prompts.shape): {prompts.shape}")
-        tokenized_prompts = self.tokenized_prompts
-        text_features = self.text_encoder(prompts, tokenized_prompts)
+            prompts = self.prompt_learner()
+            print(f"textual_prompts (prompts.shape): {prompts.shape}")
+            tokenized_prompts = self.tokenized_prompts
+            text_features = self.text_encoder(prompts, tokenized_prompts)
 
-        image_features = image_features / image_features.norm(dim=-1,
-                                                              keepdim=True)
-        text_features = text_features / text_features.norm(dim=-1,
-                                                           keepdim=True)
+            image_features = image_features / image_features.norm(dim=-1,
+                                                                keepdim=True)
+            text_features = text_features / text_features.norm(dim=-1,
+                                                            keepdim=True)
 
-        logit_scale = self.logit_scale.exp()
-        
-        coarse_logits = logit_scale * image_features @ text_features.t()
-        
-        print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
-        
-        # find top-k classes visual_prompts
-        top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1)
-        
-        print(f"top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.shape}")
-        
-        image_features, _ = self.image_encoder.forward_prompt(
+            logit_scale = self.logit_scale.exp()
+            
+            coarse_logits = logit_scale * image_features @ text_features.t()
+            
+            print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
+            
+            # find top-k classes visual_prompts
+            top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1)
+            
+            print(f"top_k_class_idx.indices.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.indices.shape}")
+            
+            flattened_top_k_class_idx = top_k_class_idx.reshape(-1)
+            
+            print(f"flattened_top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {flattened_top_k_class_idx.shape}")
+            
+            visual_ctx_top_k = visual_ctx[flattened_top_k_class_idx].view(image.shape[0], self.cfg.TRAINER.TOPK, visual_ctx.shape[-2], visual_ctx.shape[-1])
+            
+            print(f"visual_ctx_top_k.shape in (trainers/unified.py/CustomCLIP/forward): {visual_ctx_top_k.shape}")
+            
+            image_features, _ = self.image_encoder.forward_prompt(
+                image.type(self.dtype), visual_ctx_top_k)
+            
+            print(f"image_features.shape in (trainers/unified.py/CustomCLIP/forward): {image_features.shape}")
+            
+            refined_logits = logit_scale * image_features @ text_features.t()
+            
+            print(f"refined_logits.shape in (trainers/unified.py/CustomCLIP/forward): {refined_logits.shape}")
+            
+            final_logits = coarse_logits + refined_logits
+            
+            print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
+            
+        elif self.cfg.TRAINER.UNI:
+            image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
-        
-        final_logits = coarse_logits # + refined_logits
+            
+            prompts = self.prompt_learner()
+            print(f"textual_prompts (prompts.shape): {prompts.shape}")
+            tokenized_prompts = self.tokenized_prompts
+            text_features = self.text_encoder(prompts, tokenized_prompts)
+
+            image_features = image_features / image_features.norm(dim=-1,
+                                                                keepdim=True)
+            text_features = text_features / text_features.norm(dim=-1,
+                                                            keepdim=True)
+
+            logit_scale = self.logit_scale.exp()
+            
+            final_logits = logit_scale * image_features @ text_features.t()
+            
+            print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
+            
+            pass            
 
         return final_logits
 
