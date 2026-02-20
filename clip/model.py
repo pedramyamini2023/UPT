@@ -300,7 +300,9 @@ class VisionTransformer(nn.Module):
         print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post: {x.shape}")
         
         if prompt.ndim == 4:
-            x = x.reshape(B,K,L,D)
+            x = x.reshape(B,K,D)
+            
+        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post/reshape: {x.shape}")
 
         if self.proj is not None:
             out = x @ self.proj
