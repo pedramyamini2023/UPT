@@ -20,7 +20,7 @@ class FGVCAircraft(DatasetBase):
         mkdir_if_missing(self.split_fewshot_dir)
 
         classnames = []
-        with open(os.path.join(self.dataset_dir, "variants.txt"), "r") as f:
+        with open(os.path.join(self.dataset_dir,"data", "variants.txt"), "r") as f:
             lines = f.readlines()
             for line in lines:
                 classnames.append(line.strip())
