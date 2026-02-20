@@ -271,7 +271,7 @@ class VisionTransformer(nn.Module):
             spatial = spatial.unsqueeze(1).repeat(1, prompt.shape[1], 1, 1)
             x = torch.cat([cls, prompt, spatial], 2)
         elif prompt.ndim == 3:
-            # prompt = prompt.unsqueeze(0).repeat(len(x), 1, 1)
+            prompt = prompt.repeat(len(x), 1, 1)
             # prompt is (batch_dim, v, d), no need to unsqueeze then repeat to add batch_dim
             x = torch.cat([cls, prompt, spatial], 1)
             pass
@@ -281,6 +281,10 @@ class VisionTransformer(nn.Module):
         print(f"spatial.shape in (clip/model.py/VisionTransformer/forward_prompt): {spatial.shape}")
         #
         
+        if prompt.ndim == 4:
+            B,K,L,D = x.shape
+            x = x.reshape(B*K,L,D)
+        
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND
@@ -288,6 +292,9 @@ class VisionTransformer(nn.Module):
         x = x.permute(1, 0, 2)  # LND -> NLD
 
         x = self.ln_post(x[:, 0, :])
+        
+        if prompt.ndim == 4:
+            x = x.reshape(B,K,L,D)
 
         if self.proj is not None:
             out = x @ self.proj
