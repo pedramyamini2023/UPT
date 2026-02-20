@@ -284,8 +284,12 @@ class VisionTransformer(nn.Module):
         if prompt.ndim == 4:
             B,K,L,D = x.shape
             x = x.reshape(B*K,L,D)
+            
+        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) before ln_pre: {x.shape}")
         
         x = self.ln_pre(x)
+        
+        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_pre: {x.shape}")
 
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
