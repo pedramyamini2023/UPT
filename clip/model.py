@@ -293,6 +293,8 @@ class VisionTransformer(nn.Module):
 
         x = self.ln_post(x[:, 0, :])
         
+        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post: {x.shape}")
+        
         if prompt.ndim == 4:
             x = x.reshape(B,K,L,D)
 
