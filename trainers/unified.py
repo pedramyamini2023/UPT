@@ -249,9 +249,9 @@ class CustomCLIP(nn.Module):
             print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
             
             # find top-k classes visual_prompts
-            top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1)
+            top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1).indices
             
-            print(f"top_k_class_idx.indices.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.indices.shape}")
+            print(f"top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.shape}")
             
             flattened_top_k_class_idx = top_k_class_idx.reshape(-1)
             
