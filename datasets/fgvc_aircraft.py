@@ -54,7 +54,7 @@ class FGVCAircraft(DatasetBase):
         super().__init__(train_x=train, val=val, test=test)
 
     def read_data(self, cname2lab, split_file):
-        filepath = os.path.join(self.dataset_dir, split_file)
+        filepath = os.path.join(self.dataset_dir, "data",split_file)
         items = []
 
         with open(filepath, "r") as f:
