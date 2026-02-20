@@ -274,6 +274,10 @@ class VisionTransformer(nn.Module):
             # prompt is (batch_dim, v, d), no need to unsqueeze then repeat to add batch_dim
             pass
         
+        print(f"cls.shape in (clip/model.py/VisionTransformer/forward_prompt): {cls.shape}")
+        print(f"prompt.shape in (clip/model.py/VisionTransformer/forward_prompt): {prompt.shape}")
+        print(f"spatial.shape in (clip/model.py/VisionTransformer/forward_prompt): {spatial.shape}")
+        
         x = torch.cat([cls, prompt, spatial], 1)
         #
         
