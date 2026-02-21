@@ -265,6 +265,7 @@ class CustomCLIP(nn.Module):
                 image.type(self.dtype), visual_ctx_top_k)
             
             print(f"image_features.shape in (trainers/unified.py/CustomCLIP/forward): {image_features.shape}")
+            print(f"text_features.t().shape in (trainers/unified.py/CustomCLIP/forward): {text_features.t().shape}")
             
             refined_logits = logit_scale * image_features @ text_features.t()
             
