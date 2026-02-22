@@ -270,7 +270,8 @@ class CustomCLIP(nn.Module):
             print(f"text_features.shape in (trainers/unified.py/CustomCLIP/forward): {text_features.shape}")
             print(f"text_features.transpose(-1,-2).shape in (trainers/unified.py/CustomCLIP/forward): {text_features.transpose(-1,-2).shape}")
             
-            refined_logits = logit_scale * image_features @ text_features.transpose(-1,-2)
+            #refined_logits = logit_scale * image_features @ text_features.transpose(-1,-2)
+            refined_logits = (image_features * text_features).sum(dim=-1)  # [B, K]
             
             print(f"refined_logits.shape in (trainers/unified.py/CustomCLIP/forward): {refined_logits.shape}")
             
