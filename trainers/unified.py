@@ -264,7 +264,7 @@ class CustomCLIP(nn.Module):
             image_features, _ = self.image_encoder.forward_prompt(
                 image.type(self.dtype), visual_ctx_top_k)
             
-            text_features = text_features[flattened_top_k_class_idx].view(image.shape[0], self.cfg.TRAINER.TOPK, visual_ctx.shape[-1])
+            text_features = text_features[flattened_top_k_class_idx].view(image.shape[0], self.cfg.TRAINER.TOPK, text_features.shape[-1])
             
             print(f"image_features.shape in (trainers/unified.py/CustomCLIP/forward): {image_features.shape}")
             print(f"text_features.shape in (trainers/unified.py/CustomCLIP/forward): {text_features.shape}")
