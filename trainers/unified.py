@@ -275,7 +275,11 @@ class CustomCLIP(nn.Module):
             
             print(f"refined_logits.shape in (trainers/unified.py/CustomCLIP/forward): {refined_logits.shape}")
             
-            final_logits = coarse_logits + refined_logits
+            final_logits = coarse_logits.clone()
+            
+            final_logits.scatter_add(input=refined_logits,
+                                    dim=-1,
+                                    index=top_k_class_idx)
             
             print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
             
