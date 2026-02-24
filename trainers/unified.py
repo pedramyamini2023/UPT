@@ -219,7 +219,7 @@ class CustomCLIP(nn.Module):
         self.dtype = clip_model.dtype
         self.cfg = cfg
 
-    def forward(self, image, label):
+    def forward(self, image):
         # import time
         # torch.save(image.data.cpu(), f'img_{int(time.time())}.pt')
         
@@ -362,14 +362,14 @@ class Unified_v6(TrainerX):
         prec = self.cfg.TRAINER.COOP.PREC
         if prec == "amp":
             with autocast():
-                output = self.model(image, label)
+                output = self.model(image)
                 loss = F.cross_entropy(output, label)
             self.optim.zero_grad()
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optim)
             self.scaler.update()
         else:
-            output = self.model(image, label)
+            output = self.model(image)
             loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
