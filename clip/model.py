@@ -255,7 +255,7 @@ class VisionTransformer(nn.Module):
 
         return x
     
-    def forward_prompt(self, x: torch.Tensor, prompt):
+    def forward_prompt(self, x: torch.Tensor, prompt, cfg):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
@@ -276,20 +276,25 @@ class VisionTransformer(nn.Module):
             x = torch.cat([cls, prompt, spatial], 1)
             pass
         
-        print(f"cls.shape in (clip/model.py/VisionTransformer/forward_prompt): {cls.shape}")
-        print(f"prompt.shape in (clip/model.py/VisionTransformer/forward_prompt): {prompt.shape}")
-        print(f"spatial.shape in (clip/model.py/VisionTransformer/forward_prompt): {spatial.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"cls.shape in (clip/model.py/VisionTransformer/forward_prompt): {cls.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"prompt.shape in (clip/model.py/VisionTransformer/forward_prompt): {prompt.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"spatial.shape in (clip/model.py/VisionTransformer/forward_prompt): {spatial.shape}")
         #
         
         if prompt.ndim == 4:
             B,K,L,D = x.shape
             x = x.reshape(B*K,L,D)
             
-        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) before ln_pre: {x.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) before ln_pre: {x.shape}")
         
         x = self.ln_pre(x)
         
-        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_pre: {x.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_pre: {x.shape}")
 
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
@@ -297,12 +302,14 @@ class VisionTransformer(nn.Module):
 
         x = self.ln_post(x[:, 0, :])
         
-        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post: {x.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post: {x.shape}")
         
         if prompt.ndim == 4:
             x = x.reshape(B,K,D)
             
-        print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post/reshape: {x.shape}")
+        if cfg.PRINT_DEBUGGING:
+            print(f"x.shape in (clip/model.py/VisionTransformer/forward_prompt) after ln_post/reshape: {x.shape}")
 
         if self.proj is not None:
             out = x @ self.proj

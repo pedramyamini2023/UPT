@@ -56,8 +56,10 @@ class PromptLearner(nn.Module):
             prompt_prefix = " ".join(["X"] * self.n_ctx)
         
 
-        print(f'Initial context: "{prompt_prefix}"')
-        print(f"Number of context words (tokens): {self.n_ctx}")
+        if cfg.PRINT_DEBUGGING:
+            print(f'Initial context: "{prompt_prefix}"')
+        if cfg.PRINT_DEBUGGING:
+            print(f"Number of context words (tokens): {self.n_ctx}")
 
         classnames = [name.replace("_", " ") for name in classnames]
         name_lens = [len(_tokenizer.encode(name)) for name in classnames]
@@ -225,15 +227,18 @@ class CustomCLIP(nn.Module):
         
         # image_features = self.image_encoder(image.type(self.dtype))
         visual_ctx = self.prompt_learner.get_visual_prompt()
-        print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
-        print(f"image.shape: {image.shape}")
+        if self.cfg.PRINT_DEBUGGING:
+                print(f"visual prompts (visual_ctx.shape): {visual_ctx.shape}")
+        if self.cfg.PRINT_DEBUGGING:
+                print(f"image.shape: {image.shape}")
         
         if self.cfg.TRAINER.UNI_CSC or self.cfg.TRAINER.CSC:
             image_features = self.image_encoder.forward(
                 image.type(self.dtype))
 
             prompts = self.prompt_learner()
-            print(f"textual_prompts (prompts.shape): {prompts.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"textual_prompts (prompts.shape): {prompts.shape}")
             tokenized_prompts = self.tokenized_prompts
             text_features = self.text_encoder(prompts, tokenized_prompts)
 
@@ -246,34 +251,42 @@ class CustomCLIP(nn.Module):
             
             coarse_logits = logit_scale * image_features @ text_features.t()
             
-            print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"coarse_logits.shape in (trainers/unified.py/CustomCLIP/forward): {coarse_logits.shape}")
             
             # find top-k classes visual_prompts
             top_k_class_idx = torch.topk(coarse_logits, k=self.cfg.TRAINER.TOPK,dim=-1).indices
             
-            print(f"top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {top_k_class_idx.shape}")
             
             flattened_top_k_class_idx = top_k_class_idx.reshape(-1)
             
-            print(f"flattened_top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {flattened_top_k_class_idx.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"flattened_top_k_class_idx.shape in (trainers/unified.py/CustomCLIP/forward): {flattened_top_k_class_idx.shape}")
             
             visual_ctx_top_k = visual_ctx[flattened_top_k_class_idx].view(image.shape[0], self.cfg.TRAINER.TOPK, visual_ctx.shape[-2], visual_ctx.shape[-1])
             
-            print(f"visual_ctx_top_k.shape in (trainers/unified.py/CustomCLIP/forward): {visual_ctx_top_k.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"visual_ctx_top_k.shape in (trainers/unified.py/CustomCLIP/forward): {visual_ctx_top_k.shape}")
             
             image_features, _ = self.image_encoder.forward_prompt(
-                image.type(self.dtype), visual_ctx_top_k)
+                image.type(self.dtype), visual_ctx_top_k, self.cfg)
             
             text_features = text_features[flattened_top_k_class_idx].view(image.shape[0], self.cfg.TRAINER.TOPK, text_features.shape[-1])
             
-            print(f"image_features.shape in (trainers/unified.py/CustomCLIP/forward): {image_features.shape}")
-            print(f"text_features.shape in (trainers/unified.py/CustomCLIP/forward): {text_features.shape}")
-            print(f"text_features.transpose(-1,-2).shape in (trainers/unified.py/CustomCLIP/forward): {text_features.transpose(-1,-2).shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"image_features.shape in (trainers/unified.py/CustomCLIP/forward): {image_features.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"text_features.shape in (trainers/unified.py/CustomCLIP/forward): {text_features.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"text_features.transpose(-1,-2).shape in (trainers/unified.py/CustomCLIP/forward): {text_features.transpose(-1,-2).shape}")
             
             #refined_logits = logit_scale * image_features @ text_features.transpose(-1,-2)
             refined_logits = (image_features * text_features).sum(dim=-1)  # [B, K]
             
-            print(f"refined_logits.shape in (trainers/unified.py/CustomCLIP/forward): {refined_logits.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"refined_logits.shape in (trainers/unified.py/CustomCLIP/forward): {refined_logits.shape}")
             
             final_logits = coarse_logits.clone()
             
@@ -281,14 +294,16 @@ class CustomCLIP(nn.Module):
                                     top_k_class_idx,
                                     refined_logits)
             
-            print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
             
         elif self.cfg.TRAINER.UNI:
             image_features, _ = self.image_encoder.forward_prompt(
             image.type(self.dtype), visual_ctx)
             
             prompts = self.prompt_learner()
-            print(f"textual_prompts (prompts.shape): {prompts.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"textual_prompts (prompts.shape): {prompts.shape}")
             tokenized_prompts = self.tokenized_prompts
             text_features = self.text_encoder(prompts, tokenized_prompts)
 
@@ -301,7 +316,8 @@ class CustomCLIP(nn.Module):
             
             final_logits = logit_scale * image_features @ text_features.t()
             
-            print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
+            if self.cfg.PRINT_DEBUGGING:
+                print(f"final_logits.shape in (trainers/unified.py/CustomCLIP/forward): {final_logits.shape}")
             
             pass            
 
@@ -357,7 +373,8 @@ class Unified_v6(TrainerX):
     def forward_backward(self, batch):
         image, label = self.parse_batch_train(batch)
         
-        print(f"image.shape: {image.shape} and label:{label.shape}")
+        if self.cfg.PRINT_DEBUGGING:
+            print(f"image.shape: {image.shape} and label:{label.shape}")
 
         prec = self.cfg.TRAINER.COOP.PREC
         if prec == "amp":
